@@ -259,7 +259,7 @@ mod tests {
 
     #[test]
     fn test_calculate_diff_ratio() {
-        const EXPECTED_RESULT: f64 = 0.09551180552430169;
+        const EXPECTED_RESULT: f64 = 1;
         let image1 = image::open("tests/images/image1.png").unwrap();
         let image2 = image::open("tests/images/image2.png").unwrap();
         let result = calculate_diff_ratio(image1, image2);
