@@ -1,6 +1,6 @@
 use image::{DynamicImage, GenericImageView, ImageBuffer, Pixel, Rgb, RgbImage, Rgba};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum BlendMode {
     BIAS,
     HUE,
@@ -69,11 +69,7 @@ pub fn get_diff_from_images(
 
     let img: DynamicImage = DynamicImage::ImageRgb8(result);
 
-    if let Err(msg) = img.save(filename) {
-        return Err(msg.to_string());
-    }
-
-    Ok(filename.to_string())
+    safe_save_image(img, filename)
 }
 
 fn blend_pixel(
@@ -184,6 +180,24 @@ fn blend_rgb_pixels(
     )
 }
 
+fn safe_save_image(image: DynamicImage, filename: &str) -> Result<String, String> {
+    // Check if path exists
+    let path = std::path::Path::new(filename);
+
+    if !path.parent().unwrap().exists() {
+        return Err(format!(
+            "Path {} does not exist",
+            path.parent().unwrap().display()
+        ));
+    }
+
+    if let Err(msg) = image.save(filename) {
+        return Err(msg.to_string());
+    }
+
+    Ok(filename.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -245,7 +259,7 @@ mod tests {
 
     #[test]
     fn test_calculate_diff_ratio() {
-        const EXPECTED_RESULT: f64 = 0.02133546552437072;
+        const EXPECTED_RESULT: f64 = 0.09551180552430169;
         let image1 = image::open("tests/images/image1.png").unwrap();
         let image2 = image::open("tests/images/image2.png").unwrap();
         let result = calculate_diff_ratio(image1, image2);

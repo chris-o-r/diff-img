@@ -1,10 +1,11 @@
-use std::process::exit;
-
 use clap::{Arg, Command};
-use diff_img::{calculate_diff_ratio, get_diff_from_images, BlendMode};
-use image::DynamicImage;
+use diff_img::{calculate_diff_ratio, get_diff_from_images};
+
+pub mod config;
 
 fn main() {
+    let blend_mode_values = ["bias", "hue"];
+
     let matches = Command::new("diffimg")
         .version("1.0")
         .about("Does awesome things")
@@ -24,44 +25,31 @@ fn main() {
                 .long("filename")
                 .help("If present, save a diff image to this filename."),
         )
+        .arg(
+            Arg::new("bias")
+                .short('b')
+                .long("bias")
+                .default_missing_value(blend_mode_values[0])
+                .value_names(&blend_mode_values)
+                .help("Use bias blending mode"),
+        )
         .get_matches();
 
-    let image1_path = matches.get_one::<String>("image1").unwrap();
-    let image2_path = matches.get_one::<String>("image2").unwrap();
-    let filename = matches.get_one::<String>("filename");
+    let config = config::Config::from_clap_matches(&matches);
 
-    let image1 = match safe_load_image(image1_path) {
-        Ok(img) => img,
-        Err(msg) => {
-            println!("Error: {}", msg);
-            exit(1);
-        }
-    };
+    let file_name = config.filename.map(|s| s.as_str());
 
-    let image2 = match safe_load_image(image2_path) {
-        Ok(img) => img,
-        Err(msg) => {
-            println!("Error: {}", msg);
-            exit(1);
-        }
-    };
-
-    if let Some(filename) = filename {
-        match get_diff_from_images(image1, image2, &filename, BlendMode::BIAS) {
-            Ok(_) => println!("Diff image saved to {}", filename),
+    if let Some(file_name) = file_name {
+        match get_diff_from_images(config.image1, config.image2, &file_name, config.blend_mode) {
+            Ok(_) => {
+                println!("Diff image saved to {}", file_name)
+            }
             Err(msg) => println!("Error: {}", msg),
         }
         return;
     } else {
-        let diff_ratio = calculate_diff_ratio(image1, image2);
+        let diff_ratio = calculate_diff_ratio(config.image1.clone(), config.image2.clone());
 
         println!("Diff ratio: {}", diff_ratio);
-    }
-}
-
-fn safe_load_image(filename: &str) -> Result<DynamicImage, String> {
-    match image::open(filename) {
-        Ok(img) => Ok(img),
-        Err(msg) => Err(msg.to_string()),
     }
 }
