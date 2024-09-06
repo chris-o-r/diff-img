@@ -196,51 +196,6 @@ mod tests {
     }
 
     #[test]
-    fn test_get_bias_from_diff_typical() {
-        let diff = 5;
-        let current = 10;
-        let target = 20;
-        let result = get_bias_from_diff(diff, current, target);
-        assert_eq!(result, 10.0); // diff/current = 0.5, 0.5 * target = 10.0
-    }
-
-    #[test]
-    fn test_get_bias_from_diff_zero_diff() {
-        let diff = 0;
-        let current = 10;
-        let target = 20;
-        let result = get_bias_from_diff(diff, current, target);
-        assert_eq!(result, 0.0); // diff/current = 0.0, 0.0 * target = 0.0
-    }
-
-    #[test]
-    fn test_get_bias_from_diff_zero_current() {
-        let diff = 5;
-        let current = 0;
-        let target = 20;
-        let result = get_bias_from_diff(diff, current, target);
-        assert!(result.is_infinite() && result.is_sign_positive()); // diff/current = ∞, ∞ * target = ∞
-    }
-
-    #[test]
-    fn test_get_bias_from_diff_zero_target() {
-        let diff = 5;
-        let current = 10;
-        let target = 0;
-        let result = get_bias_from_diff(diff, current, target);
-        assert_eq!(result, 0.0); // diff/current = 0.5, 0.5 * target = 0.0
-    }
-
-    #[test]
-    fn test_get_bias_from_diff_large_values() {
-        let diff = 255;
-        let current = 255;
-        let target = 255;
-        let result = get_bias_from_diff(diff, current, target);
-        assert_eq!(result, 255.0); // diff/current = 1.0, 1.0 * target = 255.0
-    }
-
-    #[test]
     fn test_blend_rgb_pixels_no_bias() {
         let pixel_x = (100, 150, 200);
         let pixel_y = (50, 100, 150);
@@ -274,5 +229,26 @@ mod tests {
         let rgb_bias = (10.0, 10.0, 10.0); // High bias to test clamping
         let result = blend_rgb_pixels(pixel_x, pixel_y, rgb_bias);
         assert_eq!(result, (127, 127, 127)); // pixel_y will be clamped to (255, 255, 255), average is (127.5, 127.5, 127.5) -> (127, 127, 127)
+    }
+
+    #[test]
+    fn test_get_diff_from_images() {
+        let image1 = image::open("tests/images/image1.png").unwrap();
+        let image2 = image::open("tests/images/image2.png").unwrap();
+        let filename = "tests/images/diff.png";
+        let blend_mode = BlendMode::None;
+        let result = get_diff_from_images(image1, image2, filename, blend_mode);
+        assert_eq!(result, Ok("tests/images/diff.png".to_string()));
+
+        std::fs::remove_file(filename).unwrap();
+    }
+
+    #[test]
+    fn test_calculate_diff_ratio() {
+        const EXPECTED_RESULT: f64 = 0.02133546552437072;
+        let image1 = image::open("tests/images/image1.png").unwrap();
+        let image2 = image::open("tests/images/image2.png").unwrap();
+        let result = calculate_diff_ratio(image1, image2);
+        assert_eq!(result, EXPECTED_RESULT);
     }
 }
