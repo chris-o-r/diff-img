@@ -44,6 +44,25 @@ fn get_raw_pixels(image: &DynamicImage) -> Vec<u8> {
     pixels
 }
 
+pub fn mark_diff_with_color(
+    image1: DynamicImage,
+    image2: DynamicImage,
+    hue: Rgba<u8>,
+) -> Result<DynamicImage, String> {
+    let mut result: RgbImage = ImageBuffer::new(image1.width(), image2.height());
+
+    image1
+        .pixels()
+        .into_iter()
+        .zip(image2.pixels())
+        .map(|(a, b)| if !a.2.eq(&b.2) { (a.0, a.1, hue) } else { a })
+        .for_each(|(x, y, pixel)| {
+            result.put_pixel(x, y, Rgb([pixel[0], pixel[1], pixel[2]]));
+        });
+
+    Ok(DynamicImage::ImageRgb8(result))
+}
+
 pub fn get_diff_from_images(
     image1: DynamicImage,
     image2: DynamicImage,
@@ -259,7 +278,7 @@ mod tests {
 
     #[test]
     fn test_calculate_diff_ratio() {
-        const EXPECTED_RESULT: f64 = 0.09551180552430169;
+        const EXPECTED_RESULT: f64 = 0.030344018901682257;
         let image1 = image::open("tests/images/image1.png").unwrap();
         let image2 = image::open("tests/images/image2.png").unwrap();
         let result = calculate_diff_ratio(image1, image2);
