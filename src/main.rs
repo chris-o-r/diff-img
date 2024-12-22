@@ -1,11 +1,16 @@
 use clap::{Arg, Command};
-use diff_img::{calculate_diff_ratio, get_diff_from_images};
+use config::DiffMode;
+use diff_img::{lcs_diff, mark_diff_with_color};
 
 pub mod config;
+pub mod lib;
+
+static RATE: f32 = 100.0 / 256.0;
+
+
+const BLEND_MODE_VALUES: [&str; 3] = ["solid-color", "lcs", "blend"];
 
 fn main() {
-    let blend_mode_values = ["bias", "hue"];
-
     let matches = Command::new("diffimg")
         .version("1.0")
         .about("Does awesome things")
@@ -26,30 +31,67 @@ fn main() {
                 .help("If present, save a diff image to this filename."),
         )
         .arg(
-            Arg::new("bias")
+            Arg::new("mode")
+                .short('m')
+                .long("mode")
+                .default_value(BLEND_MODE_VALUES[1])
+                .value_parser(BLEND_MODE_VALUES)
+                .help("diff mode")
+                .required(false),
+        )
+        .arg(
+            Arg::new("color")
+                .long("color")
+                .short('c')
+                .default_value("[0,255,0,0]"),
+        )
+        .arg(
+            Arg::new("blend")
+                .long("blend")
                 .short('b')
-                .long("bias")
-                .default_missing_value(blend_mode_values[1])
-                .value_names(&blend_mode_values)
-                .help("Use bias blending mode"),
+                .default_value("hue"),
         )
         .get_matches();
 
-    let config = config::Config::from_clap_matches(&matches);
+    let mut config = config::Config::from_clap_matches(&matches);
 
-    let file_name = config.filename.map(|s| s.as_str());
+    let mode = config.mode;
+    let file_name: Option<&str> = config.filename.map(|s| s.as_str());
 
-    if let Some(file_name) = file_name {
-        match get_diff_from_images(config.image1, config.image2, &file_name, config.blend_mode) {
-            Ok(_) => {
-                println!("Diff image saved to {}", file_name)
+    let _s: Result<String, _> = match mode {
+        DiffMode::MarkWithColor => {
+            match mark_diff_with_color::mark_diff_with_color(
+                config.image1,
+                config.image2,
+                config.color,
+            ) {
+                Ok(img) => {
+                    lib::safe_save_image(img, file_name.unwrap())
+                }
+                Err(msg) => {
+                    panic!("{}", msg);
+                }
             }
-            Err(msg) => println!("Error: {}", msg),
         }
-        return;
-    } else {
-        let diff_ratio = calculate_diff_ratio(config.image1.clone(), config.image2.clone());
+        DiffMode::LCS => {
+            match crate::lcs_diff::compare(&mut config.image1, &mut config.image2, RATE) {
+                Ok(img) => {
+                    lib::safe_save_image(img, file_name.unwrap())
+                }
+                Err(msg) => {
+                    panic!("{}", msg);
+                }
+            }
+        }
+        DiffMode::Blend => {
+            let img = diff_img::blend_diff::get_diff_from_images(
+                config.image1,
+                config.image2,
+                config.blend_mode,
+            )
+            .unwrap();
 
-        println!("Diff ratio: {}", diff_ratio);
-    }
+            lib::safe_save_image(img, file_name.unwrap())
+        }
+    };
 }
