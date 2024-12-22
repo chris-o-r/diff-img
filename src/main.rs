@@ -29,7 +29,7 @@ fn main() {
             Arg::new("bias")
                 .short('b')
                 .long("bias")
-                .default_missing_value(blend_mode_values[0])
+                .default_missing_value(blend_mode_values[1])
                 .value_names(&blend_mode_values)
                 .help("Use bias blending mode"),
         )
