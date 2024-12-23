@@ -4,7 +4,10 @@ use clap::ArgMatches;
 use diff_img::blend_diff::BlendMode;
 use image::{DynamicImage, Rgba};
 
-use crate::BLEND_MODE_VALUES;
+
+
+pub const BLEND_MODE_VALUES: [&str; 3] = ["solid-color", "lcs", "blend"];
+
 
 
 #[derive(Copy, Clone, Debug, PartialEq)]
