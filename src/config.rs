@@ -19,7 +19,7 @@ pub struct Config<'a> {
     pub image1: DynamicImage,
     pub image2: DynamicImage,
     pub filename: Option<&'a String>,
-    pub mode: DiffMode,
+    pub mode: Option<DiffMode>,
     pub blend_mode: BlendMode,
     pub color: Rgba<u8>,
 }
@@ -31,10 +31,16 @@ impl<'a> Config<'a> {
         let image1_path = matches.get_one::<String>("image1").unwrap();
         let image2_path: &String = matches.get_one::<String>("image2").unwrap();
         let filename: Option<&String> = matches.get_one::<String>("filename");
-        let mode_string = matches.get_one::<String>("mode").unwrap();
+        let mode_string = matches.get_one::<String>("mode");
         let color_string = matches.get_one::<String>("color").unwrap();
 
-        let mode = get_mode_from_string(mode_string).unwrap();
+        let mode: Option<DiffMode> = match mode_string {
+            Some(val) => match get_mode_from_string(val) {
+                Ok(mode) => Some(mode),
+                Err(err) => panic!("{}", err),
+            },
+            None => None,
+        };
 
         let blend_mode: BlendMode = match matches.get_one::<String>("blend") {
             Some(bias) => match string_into_blend_mode(bias) {
