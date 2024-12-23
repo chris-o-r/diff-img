@@ -1,14 +1,11 @@
 use std::process::exit;
 
 use clap::ArgMatches;
-use diff_img::blend_diff::BlendMode;
+use diff_img::BlendMode;
 use image::{DynamicImage, Rgba};
 
-
-
-pub const BLEND_MODE_VALUES: [&str; 3] = ["solid-color", "lcs", "blend"];
-
-
+pub const DIFF_MODES: [&str; 3] = ["solid-color", "lcs", "blend"];
+pub const BLEND_MODES: [&str; 3] = ["bias", "hue", "overlay"];
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum DiffMode {
@@ -16,7 +13,6 @@ pub enum DiffMode {
     MarkWithColor,
     LCS,
 }
-
 
 #[derive(Debug)]
 pub struct Config<'a> {
@@ -41,12 +37,11 @@ impl<'a> Config<'a> {
         let mode = get_mode_from_string(mode_string).unwrap();
 
         let blend_mode: BlendMode = match matches.get_one::<String>("blend") {
-            Some(bias) => match bias.as_str() {
-                "bias" => BlendMode::BIAS,
-                "hue" => BlendMode::HUE,
-                _ => BlendMode::None,
+            Some(bias) => match string_into_blend_mode(bias) {
+                Ok(mode) => mode,
+                Err(err) => panic!("{}", err),
             },
-            None => BlendMode::BIAS,
+            None => BlendMode::Overlay,
         };
 
         let image1 = match safe_load_image(image1_path) {
@@ -87,15 +82,14 @@ fn safe_load_image(filename: &str) -> Result<DynamicImage, String> {
 
 fn get_mode_from_string(input: &str) -> Result<DiffMode, String> {
     match input {
-        val if val == BLEND_MODE_VALUES[0] => Ok(DiffMode::MarkWithColor),
-        val if val == BLEND_MODE_VALUES[1] => Ok(DiffMode::LCS),
-        val if val == BLEND_MODE_VALUES[2] => Ok(DiffMode::Blend),
+        val if val == DIFF_MODES[0] => Ok(DiffMode::MarkWithColor),
+        val if val == DIFF_MODES[1] => Ok(DiffMode::LCS),
+        val if val == DIFF_MODES[2] => Ok(DiffMode::Blend),
         _ => Err(format!("Nothing matching {}", input)),
     }
 }
 
 fn rgba_from_string(input: &str) -> Result<Rgba<u8>, String> {
-
     let mut cleaned = input.to_string();
     cleaned = cleaned.replace("[", "");
     cleaned = cleaned.replace("]", "");
@@ -118,6 +112,15 @@ fn rgba_from_string(input: &str) -> Result<Rgba<u8>, String> {
     Ok(Rgba::<u8>(arr))
 }
 
+fn string_into_blend_mode(input: &str) -> Result<BlendMode, String> {
+    match input {
+        val if val == BLEND_MODES[0] => Ok(BlendMode::BIAS),
+        val if val == BLEND_MODES[1] => Ok(BlendMode::HUE),
+        val if val == BLEND_MODES[2] => Ok(BlendMode::Overlay),
+        _ => Err(format!("Nothing matching {}", input)),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -131,15 +134,28 @@ mod tests {
         res = rgba_from_string("[0,255,0,as]");
 
         assert_eq!(res.is_err() == true, true);
-
     }
 
     #[test]
-    fn test_get_mode_from_string_valid_inputs() {
+    fn test_get_diff_mode_from_string_valid_inputs() {
         // Test with valid inputs
-        assert_eq!(get_mode_from_string(BLEND_MODE_VALUES[0]), Ok(DiffMode::MarkWithColor));
-        assert_eq!(get_mode_from_string(BLEND_MODE_VALUES[1]), Ok(DiffMode::LCS));
-        assert_eq!(get_mode_from_string(BLEND_MODE_VALUES[2]), Ok(DiffMode::Blend));
+        assert_eq!(
+            get_mode_from_string(DIFF_MODES[0]),
+            Ok(DiffMode::MarkWithColor)
+        );
+        assert_eq!(get_mode_from_string(DIFF_MODES[1]), Ok(DiffMode::LCS));
+        assert_eq!(get_mode_from_string(DIFF_MODES[2]), Ok(DiffMode::Blend));
+    }
+
+    #[test]
+    fn test_get_blend_mode_from_string_valid_inputs() {
+        // Test with valid inputs
+        assert_eq!(string_into_blend_mode(BLEND_MODES[0]), Ok(BlendMode::BIAS));
+        assert_eq!(string_into_blend_mode(BLEND_MODES[1]), Ok(BlendMode::HUE));
+        assert_eq!(
+            string_into_blend_mode(BLEND_MODES[2]),
+            Ok(BlendMode::Overlay)
+        );
     }
 
     #[test]

@@ -1,6 +1,7 @@
-use super::base64::decode;
-use super::image::*;
 use std::cmp;
+
+use base64::decode;
+use image::{DynamicImage, GenericImage, ImageBuffer, Rgba};
 
 pub static BLACK: (u8, u8, u8) = (0, 0, 0);
 pub static RED: (u8, u8, u8) = (255, 119, 119);
@@ -107,7 +108,9 @@ pub fn get_diff_image(
             &lcs_diff::DiffResult::Removed(ref r) => {
                 put_diff_pixels(y, &mut img, before_width, &r.data, RED, rate)?
             }
-            &lcs_diff::DiffResult::Common(ref c) => put_diff_pixels(y, &mut img, width, &c.data, BLACK, 0.0)?,
+            &lcs_diff::DiffResult::Common(ref c) => {
+                put_diff_pixels(y, &mut img, width, &c.data, BLACK, 0.0)?
+            }
         }
     }
     Ok(DynamicImage::ImageRgba8(img))

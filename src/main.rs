@@ -1,18 +1,16 @@
 use clap::{Arg, Command};
-use config::{DiffMode, BLEND_MODE_VALUES};
-use diff_img::{lcs_diff, mark_diff_with_color};
+use config::{DiffMode, BLEND_MODES, DIFF_MODES};
+use diff_img::{highlight_changes_with_color, lcs_diff};
 
 pub mod config;
 pub mod lib;
 
 static RATE: f32 = 100.0 / 256.0;
 
-
-
 fn main() {
     let matches = Command::new("diffimg")
         .version("1.0")
-        .about("Does awesome things")
+        .about("Diff images")
         .arg(
             Arg::new("image1")
                 .help("First image to diff")
@@ -33,8 +31,8 @@ fn main() {
             Arg::new("mode")
                 .short('m')
                 .long("mode")
-                .default_value(BLEND_MODE_VALUES[1])
-                .value_parser(BLEND_MODE_VALUES)
+                .default_value(DIFF_MODES[1])
+                .value_parser(DIFF_MODES)
                 .help("diff mode")
                 .required(false),
         )
@@ -48,7 +46,8 @@ fn main() {
             Arg::new("blend")
                 .long("blend")
                 .short('b')
-                .default_value("hue"),
+                .default_value(BLEND_MODES[1])
+                .value_parser(BLEND_MODES),
         )
         .get_matches();
 
@@ -59,36 +58,24 @@ fn main() {
 
     let _s: Result<String, _> = match mode {
         DiffMode::MarkWithColor => {
-            match mark_diff_with_color::mark_diff_with_color(
-                config.image1,
-                config.image2,
-                config.color,
-            ) {
-                Ok(img) => {
-                    lib::safe_save_image(img, file_name.unwrap())
-                }
+            match highlight_changes_with_color(config.image1, config.image2, config.color) {
+                Ok(img) => lib::safe_save_image(img, file_name.unwrap()),
                 Err(msg) => {
                     panic!("{}", msg);
                 }
             }
         }
         DiffMode::LCS => {
-            match crate::lcs_diff::compare(&mut config.image1, &mut config.image2, RATE) {
-                Ok(img) => {
-                    lib::safe_save_image(img, file_name.unwrap())
-                }
+            match crate::lcs_diff(&mut config.image1, &mut config.image2, RATE) {
+                Ok(img) => lib::safe_save_image(img, file_name.unwrap()),
                 Err(msg) => {
                     panic!("{}", msg);
                 }
             }
         }
         DiffMode::Blend => {
-            let img = diff_img::blend_diff::get_diff_from_images(
-                config.image1,
-                config.image2,
-                config.blend_mode,
-            )
-            .unwrap();
+            let img =
+                diff_img::blend_images(config.image1, config.image2, config.blend_mode).unwrap();
 
             lib::safe_save_image(img, file_name.unwrap())
         }
