@@ -1,6 +1,6 @@
 use clap::{Arg, Command};
 use config::{DiffMode, BLEND_MODES, DIFF_MODES};
-use diff_img::{highlight_changes_with_color, lcs_diff};
+use diff_img::{calculate_diff_ratio, highlight_changes_with_color, lcs_diff};
 
 pub mod config;
 pub mod lib;
@@ -31,7 +31,6 @@ fn main() {
             Arg::new("mode")
                 .short('m')
                 .long("mode")
-                .default_value(DIFF_MODES[1])
                 .value_parser(DIFF_MODES)
                 .help("diff mode")
                 .required(false),
@@ -56,28 +55,32 @@ fn main() {
     let mode = config.mode;
     let file_name: Option<&str> = config.filename.map(|s| s.as_str());
 
-    let _s: Result<String, _> = match mode {
-        DiffMode::MarkWithColor => {
-            match highlight_changes_with_color(config.image1, config.image2, config.color) {
+    if mode.is_none() {
+        println!("Diff ratio {}", calculate_diff_ratio(config.image1.clone(), config.image2.clone()))
+    } else {
+        let _s: Result<String, _> = match mode.unwrap() {
+            DiffMode::MarkWithColor => {
+                match highlight_changes_with_color(config.image1, config.image2, config.color) {
+                    Ok(img) => lib::safe_save_image(img, file_name.unwrap()),
+                    Err(msg) => {
+                        panic!("{}", msg);
+                    }
+                }
+            }
+            DiffMode::LCS => match crate::lcs_diff(&mut config.image1, &mut config.image2, RATE) {
                 Ok(img) => lib::safe_save_image(img, file_name.unwrap()),
                 Err(msg) => {
                     panic!("{}", msg);
                 }
+            },
+            DiffMode::Blend => {
+                let img =
+                    diff_img::blend_images(config.image1, config.image2, config.blend_mode).unwrap();
+    
+                lib::safe_save_image(img, file_name.unwrap())
             }
-        }
-        DiffMode::LCS => {
-            match crate::lcs_diff(&mut config.image1, &mut config.image2, RATE) {
-                Ok(img) => lib::safe_save_image(img, file_name.unwrap()),
-                Err(msg) => {
-                    panic!("{}", msg);
-                }
-            }
-        }
-        DiffMode::Blend => {
-            let img =
-                diff_img::blend_images(config.image1, config.image2, config.blend_mode).unwrap();
+        };
+    }
 
-            lib::safe_save_image(img, file_name.unwrap())
-        }
-    };
+ 
 }
