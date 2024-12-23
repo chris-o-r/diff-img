@@ -1,6 +1,5 @@
+use base64::encode;
 use image::Rgba;
-
-use super::base64::encode;
 
 #[derive(Debug)]
 pub struct CompareImage {
