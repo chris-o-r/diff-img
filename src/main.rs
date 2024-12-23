@@ -1,5 +1,5 @@
 use clap::{Arg, Command};
-use config::DiffMode;
+use config::{DiffMode, BLEND_MODE_VALUES};
 use diff_img::{lcs_diff, mark_diff_with_color};
 
 pub mod config;
@@ -8,7 +8,6 @@ pub mod lib;
 static RATE: f32 = 100.0 / 256.0;
 
 
-const BLEND_MODE_VALUES: [&str; 3] = ["solid-color", "lcs", "blend"];
 
 fn main() {
     let matches = Command::new("diffimg")
