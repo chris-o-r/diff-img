@@ -3,7 +3,7 @@ use config::{DiffMode, BLEND_MODES, DIFF_MODES};
 use diff_img::{calculate_diff_ratio, highlight_changes_with_color, lcs_diff};
 
 pub mod config;
-pub mod lib;
+pub mod utils;
 
 static RATE: f32 = 100.0 / 256.0;
 
@@ -61,14 +61,14 @@ fn main() {
         let _s: Result<String, _> = match mode.unwrap() {
             DiffMode::MarkWithColor => {
                 match highlight_changes_with_color(config.image1, config.image2, config.color) {
-                    Ok(img) => lib::safe_save_image(img, file_name.unwrap()),
+                    Ok(img) => utils::safe_save_image(img, file_name.unwrap()),
                     Err(msg) => {
                         panic!("{}", msg);
                     }
                 }
             }
             DiffMode::LCS => match crate::lcs_diff(&mut config.image1, &mut config.image2, RATE) {
-                Ok(img) => lib::safe_save_image(img, file_name.unwrap()),
+                Ok(img) => utils::safe_save_image(img, file_name.unwrap()),
                 Err(msg) => {
                     panic!("{}", msg);
                 }
@@ -77,7 +77,7 @@ fn main() {
                 let img =
                     diff_img::blend_images(config.image1, config.image2, config.blend_mode).unwrap();
     
-                lib::safe_save_image(img, file_name.unwrap())
+                utils::safe_save_image(img, file_name.unwrap())
             }
         };
     }
