@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 clap  = "4.5.16"
-image = "0.25.1"
+image = "0.25.5"
 base64 = "0.9.0"
 bytemuck = "1.16.0"
 lcs-diff = "0.1.1"
