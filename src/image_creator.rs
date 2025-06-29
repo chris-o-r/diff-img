@@ -1,6 +1,6 @@
 use std::cmp;
 
-use base64::decode;
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use image::{DynamicImage, GenericImage, ImageBuffer, Rgba};
 
 pub static BLACK: (u8, u8, u8) = (0, 0, 0);
@@ -14,8 +14,7 @@ fn compute_range(r: &Vec<usize>) -> Vec<(usize, usize)> {
     let mut y1: usize;
     let mut ranges: Vec<(usize, usize)> = Vec::new();
     while i < r.len() {
-        y1 = r[i];
-        acc = y1;
+        y1 = r[i]; acc = y1;
         i += 1;
         loop {
             if i >= r.len() {
@@ -68,7 +67,7 @@ fn put_diff_pixels(
     rgb: (u8, u8, u8),
     rate: f32,
 ) -> Result<(), base64::DecodeError> {
-    let row = decode(data)?;
+    let row = STANDARD.decode(data)?;
     for x in 0..img.dimensions().0 {
         let index = x as usize * 4;
         let pixel: Rgba<u8> = if row_width > x {
