@@ -1,4 +1,4 @@
-use base64::encode;
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use image::Rgba;
 
 #[derive(Debug)]
@@ -13,6 +13,7 @@ impl CompareImage {
     }
 
     pub fn create_encoded_rows(&self) -> Vec<String> {
+
         let mut rows = Vec::new();
         let mut row = Vec::new();
         for pixel in &self.pixels {
@@ -21,7 +22,7 @@ impl CompareImage {
             row.push(pixel.0[2]);
             row.push(pixel.0[3]);
             if row.len() == self.dimensions.0 as usize * 4 {
-                rows.push(encode(&row));
+                rows.push(STANDARD.encode(&row));
                 row.clear();
             }
         }
