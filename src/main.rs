@@ -22,12 +22,6 @@ fn main() {
                 .required(true),
         )
         .arg(
-            Arg::new("filename")
-                .short('f')
-                .long("filename")
-                .help("If present, save a diff image to this filename."),
-        )
-        .arg(
             Arg::new("mode")
                 .short('m')
                 .long("mode")
@@ -48,6 +42,13 @@ fn main() {
                 .default_value(BLEND_MODES[1])
                 .value_parser(BLEND_MODES),
         )
+        .arg(
+            Arg::new("filename")
+                .short('f')
+                .long("filename")
+                .help("If present, save a diff image to this filename. Required if --mode is set.")
+                .default_missing_value(".result.png")
+        )
         .get_matches();
 
     let mut config = config::Config::from_clap_matches(&matches);
@@ -56,31 +57,37 @@ fn main() {
     let file_name: Option<&str> = config.filename.map(|s| s.as_str());
 
     if mode.is_none() {
-        println!("Diff ratio {}", calculate_diff_ratio(config.image1.clone(), config.image2.clone()))
+        println!(
+            "Diff ratio {}",
+            calculate_diff_ratio(config.image1.clone(), config.image2.clone())
+        )
     } else {
+        let file_name_unwrapped = match file_name {
+            Some(file_name) => file_name,
+            None => panic!("Please provide a file name for diff modes"),
+        };
+
         let _s: Result<String, _> = match mode.unwrap() {
             DiffMode::MarkWithColor => {
                 match highlight_changes_with_color(config.image1, config.image2, config.color) {
-                    Ok(img) => utils::safe_save_image(img, file_name.unwrap()),
+                    Ok(img) => utils::safe_save_image(img, file_name_unwrapped),
                     Err(msg) => {
                         panic!("{}", msg);
                     }
                 }
             }
             DiffMode::LCS => match crate::lcs_diff(&mut config.image1, &mut config.image2, RATE) {
-                Ok(img) => utils::safe_save_image(img, file_name.unwrap()),
+                Ok(img) => utils::safe_save_image(img, file_name_unwrapped),
                 Err(msg) => {
                     panic!("{}", msg);
                 }
             },
             DiffMode::Blend => {
-                let img =
-                    diff_img::blend_images(config.image1, config.image2, config.blend_mode).unwrap();
-    
-                utils::safe_save_image(img, file_name.unwrap())
+                let img = diff_img::blend_images(config.image1, config.image2, config.blend_mode)
+                    .unwrap();
+
+                utils::safe_save_image(img, file_name_unwrapped)
             }
         };
     }
-
- 
 }
