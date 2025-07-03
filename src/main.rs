@@ -62,10 +62,7 @@ fn main() {
             calculate_diff_ratio(config.image1.clone(), config.image2.clone())
         )
     } else {
-        let file_name_unwrapped = match file_name {
-            Some(file_name) => file_name,
-            None => panic!("Please provide a file name for diff modes"),
-        };
+        let file_name_unwrapped = file_name.expect("Please provide a file name for diff modes");
 
         let _s: Result<String, _> = match mode.unwrap() {
             DiffMode::MarkWithColor => {
