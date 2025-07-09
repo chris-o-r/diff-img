@@ -47,7 +47,7 @@ fn main() {
                 .short('f')
                 .long("filename")
                 .help("If present, save a diff image to this filename. Required if --mode is set.")
-                .default_missing_value(".result.png")
+                .default_missing_value(".result.png"),
         )
         .get_matches();
 
