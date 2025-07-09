@@ -16,7 +16,6 @@ pub fn highlight_changes_with_color(
 
     before
         .pixels()
-        .into_iter()
         .zip(after.pixels())
         .map(|(a, b)| if !a.2.eq(&b.2) { (a.0, a.1, color) } else { a })
         .for_each(|(x, y, pixel)| {
@@ -28,8 +27,6 @@ pub fn highlight_changes_with_color(
 
 // Return a difference ratio between 0 and 1 for the two images
 pub fn calculate_diff_ratio(image1: DynamicImage, image2: DynamicImage) -> f64 {
-    use std::u8;
-
     let image1_raw = get_raw_pixels(&image1);
     let image2_raw = get_raw_pixels(&image2);
 
@@ -61,7 +58,7 @@ fn abs_diff(x: u8, y: u8) -> u8 {
     if x > y {
         return x - y;
     }
-    return y - x;
+    y - x
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -80,7 +77,6 @@ pub fn blend_images(
 
     image1
         .pixels()
-        .into_iter()
         .zip(image2.pixels())
         .map(|(a, b)| {
             blend_pixel(
@@ -113,11 +109,11 @@ fn blend_pixel(
     let avg_diff = total_diff / 3.0;
 
     if avg_diff == 0.0 {
-        return (
+        (
             pixel_x.0,
             pixel_x.1,
             Rgba([a_rgb[0], a_rgb[1], a_rgb[2], 0]),
-        );
+        )
     } else {
         match blend_mode {
             BlendMode::BIAS => {
@@ -130,11 +126,11 @@ fn blend_pixel(
                     (b_rgb[0], b_rgb[1], b_rgb[2]),
                     (red_bias, green_bias, blue_bias),
                 );
-                return (
+                (
                     pixel_x.0,
                     pixel_x.1,
                     Rgba([blended_pixel.0, blended_pixel.1, blended_pixel.2, 0]),
-                );
+                )
             }
             BlendMode::HUE => {
                 // make more purple
@@ -143,11 +139,11 @@ fn blend_pixel(
                     (b_rgb[0], b_rgb[1], b_rgb[2]),
                     (0.3, -0.3, 0.3),
                 );
-                return (
+                (
                     pixel_x.0,
                     pixel_x.1,
                     Rgba([blended_pixel.0, blended_pixel.1, blended_pixel.2, 0]),
-                );
+                )
             }
             BlendMode::Overlay => {
                 let overlayed_pixel = create_overlayed_pixel(
@@ -156,11 +152,11 @@ fn blend_pixel(
                     0.5,
                 );
 
-                return (
+                (
                     pixel_x.0,
                     pixel_x.1,
                     Rgba([overlayed_pixel.0, overlayed_pixel.1, overlayed_pixel.2, 0]),
-                );
+                )
             }
         }
     }
@@ -178,7 +174,7 @@ fn create_overlayed_pixel(
     let g_blended = ((alpha * green_x as f32) + ((1.0 - alpha) * green_y as f32)).min(255.0) as u8;
     let b_blended = ((alpha * blue_x as f32) + ((1.0 - alpha) * blue_y as f32)).min(255.0) as u8;
 
-    return (r_blended, g_blended, b_blended);
+    (r_blended, g_blended, b_blended)
 }
 
 // Calculate the bias for a color channel based on the difference between two pixels
@@ -188,9 +184,8 @@ fn get_bias_from_diff(diff: u8, current: u8, target: u8) -> f32 {
     let target = target as f32;
 
     let bias = diff / current;
-    let bias = bias * target;
 
-    bias
+    bias * target
 }
 
 // Blend two RGB pixels together
@@ -214,9 +209,9 @@ fn blend_rgb_pixels(
 
     // Return the blended pixel, clamping each value to [0, 255]
     (
-        out_r.min(255.0).max(0.0) as u8,
-        out_g.min(255.0).max(0.0) as u8,
-        out_b.min(255.0).max(0.0) as u8,
+        out_r.clamp(0.0, 255.0) as u8,
+        out_g.clamp(0.0, 255.0) as u8,
+        out_b.clamp(0.0, 255.0) as u8,
     )
 }
 
@@ -239,8 +234,8 @@ pub fn lcs_diff(
     let mut removed: Vec<usize> = Vec::new();
     for d in result.iter() {
         match d {
-            &lcs_diff::DiffResult::Added(ref a) => added.push(a.new_index.unwrap()),
-            &lcs_diff::DiffResult::Removed(ref r) => removed.push(r.old_index.unwrap()),
+            lcs_diff::DiffResult::Added(a) => added.push(a.new_index.unwrap()),
+            lcs_diff::DiffResult::Removed(r) => removed.push(r.old_index.unwrap()),
             _ => (),
         }
     }
@@ -336,6 +331,6 @@ mod tests {
         let image2 = image::open("tests/images/image2.png").unwrap();
         let blend_mode = BlendMode::Overlay;
         let result = blend_images(image1, image2, blend_mode);
-        assert_eq!(result.is_ok(), true);
+        assert!(result.is_ok());
     }
 }

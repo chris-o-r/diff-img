@@ -7,14 +7,15 @@ pub static BLACK: (u8, u8, u8) = (0, 0, 0);
 pub static RED: (u8, u8, u8) = (255, 119, 119);
 pub static GREEN: (u8, u8, u8) = (99, 195, 99);
 
-fn compute_range(r: &Vec<usize>) -> Vec<(usize, usize)> {
+fn compute_range(r: &[usize]) -> Vec<(usize, usize)> {
     let mut i = 0;
     let mut j = 0;
     let mut acc: usize;
     let mut y1: usize;
     let mut ranges: Vec<(usize, usize)> = Vec::new();
     while i < r.len() {
-        y1 = r[i]; acc = y1;
+        y1 = r[i];
+        acc = y1;
         i += 1;
         loop {
             if i >= r.len() {
@@ -51,12 +52,12 @@ where
 }
 
 fn blend(base: Rgba<u8>, rgb: (u8, u8, u8), rate: f32) -> Rgba<u8> {
-    return Rgba([
+    Rgba([
         (base.0[0] as f32 * (1.0 - rate) + rgb.0 as f32 * (rate)) as u8,
         (base.0[1] as f32 * (1.0 - rate) + rgb.1 as f32 * (rate)) as u8,
         (base.0[2] as f32 * (1.0 - rate) + rgb.2 as f32 * (rate)) as u8,
         base.0[3],
-    ]);
+    ])
 }
 
 fn put_diff_pixels(
@@ -75,17 +76,12 @@ fn put_diff_pixels(
         } else {
             Rgba([0, 0, 0, 0])
         };
-        img.put_pixel(x as u32, y as u32, blend(pixel, rgb, rate));
+        img.put_pixel(x, y as u32, blend(pixel, rgb, rate));
     }
     Ok(())
 }
 
-pub fn mark_org_image(
-    base: &mut DynamicImage,
-    color: (u8, u8, u8),
-    rate: f32,
-    indexes: &Vec<usize>,
-) {
+pub fn mark_org_image(base: &mut DynamicImage, color: (u8, u8, u8), rate: f32, indexes: &[usize]) {
     let range = compute_range(indexes);
     blend_diff_area(base, range, color, rate);
 }
@@ -93,7 +89,7 @@ pub fn mark_org_image(
 pub fn get_diff_image(
     before_width: u32,
     after_width: u32,
-    result: &Vec<lcs_diff::DiffResult<String>>,
+    result: &[lcs_diff::DiffResult<String>],
     rate: f32,
 ) -> Result<DynamicImage, base64::DecodeError> {
     let height = result.len() as u32;
@@ -101,13 +97,13 @@ pub fn get_diff_image(
     let mut img: ImageBuffer<Rgba<u8>, Vec<u8>> = ImageBuffer::new(width, height);
     for (y, d) in result.iter().enumerate() {
         match d {
-            &lcs_diff::DiffResult::Added(ref a) => {
+            lcs_diff::DiffResult::Added(a) => {
                 put_diff_pixels(y, &mut img, after_width, &a.data, GREEN, rate)?
             }
-            &lcs_diff::DiffResult::Removed(ref r) => {
+            lcs_diff::DiffResult::Removed(r) => {
                 put_diff_pixels(y, &mut img, before_width, &r.data, RED, rate)?
             }
-            &lcs_diff::DiffResult::Common(ref c) => {
+            lcs_diff::DiffResult::Common(c) => {
                 put_diff_pixels(y, &mut img, width, &c.data, BLACK, 0.0)?
             }
         }

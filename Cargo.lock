@@ -292,7 +292,6 @@ name = "diff_img"
 version = "0.1.0"
 dependencies = [
  "base64",
- "bytemuck",
  "clap",
  "image",
  "lcs-diff",
