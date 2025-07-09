@@ -82,7 +82,7 @@ impl<'a> Config<'a> {
 fn safe_load_image(filename: &str) -> Result<DynamicImage, String> {
     match image::open(filename) {
         Ok(img) => Ok(img),
-        Err(msg) => Err(format!("Error loading image {}: {}", filename, msg)),
+        Err(msg) => Err(format!("Error loading image {filename}: {msg}")),
     }
 }
 
@@ -91,7 +91,7 @@ fn get_mode_from_string(input: &str) -> Result<DiffMode, String> {
         val if val == DIFF_MODES[0] => Ok(DiffMode::MarkWithColor),
         val if val == DIFF_MODES[1] => Ok(DiffMode::LCS),
         val if val == DIFF_MODES[2] => Ok(DiffMode::Blend),
-        _ => Err(format!("Nothing matching {}", input)),
+        _ => Err(format!("Nothing matching {input}")),
     }
 }
 
@@ -109,7 +109,7 @@ fn rgba_from_string(input: &str) -> Result<Rgba<u8>, String> {
 
     // Convert the parsed parts into an array with four elements
     let arr = [
-        parts.get(0).copied().unwrap_or(0), // First element, or default to 0
+        parts.first().copied().unwrap_or(0), // First element, or default to 0
         parts.get(1).copied().unwrap_or(0), // Second element, or default to 0
         parts.get(2).copied().unwrap_or(0), // Third element, or default to 0
         parts.get(3).copied().unwrap_or(0),
@@ -123,7 +123,7 @@ fn string_into_blend_mode(input: &str) -> Result<BlendMode, String> {
         val if val == BLEND_MODES[0] => Ok(BlendMode::BIAS),
         val if val == BLEND_MODES[1] => Ok(BlendMode::HUE),
         val if val == BLEND_MODES[2] => Ok(BlendMode::Overlay),
-        _ => Err(format!("Nothing matching {}", input)),
+        _ => Err(format!("Nothing matching {input}")),
     }
 }
 
@@ -135,11 +135,11 @@ mod tests {
     fn test_rgba_from_string() {
         let mut res = rgba_from_string("[0,255,0,0]");
 
-        assert_eq!(res.is_ok() == true, true);
+        assert!(res.is_ok());
 
         res = rgba_from_string("[0,255,0,as]");
 
-        assert_eq!(res.is_err() == true, true);
+        assert!(res.is_err());
     }
 
     #[test]
@@ -168,7 +168,7 @@ mod tests {
     fn test_get_mode_from_string_invalid_input() {
         // Test with an invalid input
         let input = "unknown";
-        let expected_error = format!("Nothing matching {}", input);
+        let expected_error = format!("Nothing matching {input}");
         assert_eq!(get_mode_from_string(input), Err(expected_error));
     }
 }
