@@ -8,8 +8,8 @@ use diff::*;
 use image_creator::*;
 
 pub fn highlight_changes_with_color(
-    before: DynamicImage,
-    after: DynamicImage,
+    before: &DynamicImage,
+    after: &DynamicImage,
     color: Rgba<u8>,
 ) -> Result<DynamicImage, String> {
     let mut result: RgbImage = ImageBuffer::new(before.width(), after.height());
@@ -26,9 +26,9 @@ pub fn highlight_changes_with_color(
 }
 
 // Return a difference ratio between 0 and 1 for the two images
-pub fn calculate_diff_ratio(image1: DynamicImage, image2: DynamicImage) -> f64 {
-    let image1_raw = get_raw_pixels(&image1);
-    let image2_raw = get_raw_pixels(&image2);
+pub fn calculate_diff_ratio(image1: &DynamicImage, image2: &DynamicImage) -> f64 {
+    let image1_raw = get_raw_pixels(image1);
+    let image2_raw = get_raw_pixels(image2);
 
     // All color types wrap an 8-bit value for each channel
     let total_possible = (u8::MAX as usize * image1_raw.len()) as f64;
@@ -69,8 +69,8 @@ pub enum BlendMode {
 }
 
 pub fn blend_images(
-    image1: DynamicImage,
-    image2: DynamicImage,
+    image1: &DynamicImage,
+    image2: &DynamicImage,
     blend_mode: BlendMode,
 ) -> Result<DynamicImage, String> {
     let mut result: RgbImage = ImageBuffer::new(image1.width(), image2.height());
@@ -216,10 +216,12 @@ fn blend_rgb_pixels(
 }
 
 pub fn lcs_diff(
-    before: &mut DynamicImage,
-    after: &mut DynamicImage,
+    before: &DynamicImage,
+    after: &DynamicImage,
     rate: f32,
 ) -> Result<DynamicImage, DecodeError> {
+
+    
     let compare_before = CompareImage::new(
         before.dimensions(),
         before.pixels().map(|pix| pix.2).collect(),
@@ -240,8 +242,10 @@ pub fn lcs_diff(
         }
     }
 
-    mark_org_image(before, RED, rate, &removed);
-    mark_org_image(after, GREEN, rate, &added);
+    let mut before = before.clone();
+    let mut after = after.clone();
+    mark_org_image(&mut before, RED, rate, &removed);
+    mark_org_image(&mut after, GREEN, rate, &added);
 
     get_diff_image(before.dimensions().0, after.dimensions().0, &result, rate)
 }
@@ -255,7 +259,7 @@ mod tests {
         let image2 = image::open("tests/images/image2.png").unwrap();
         let color = Rgba([0, 255, 0, 0]);
 
-        let result = highlight_changes_with_color(image1, image2, color);
+        let result = highlight_changes_with_color(&image1, &image2, color);
 
         assert_eq!(result.is_ok(), result.is_ok());
     }
@@ -265,7 +269,7 @@ mod tests {
         const EXPECTED_RESULT: f64 = 0.030344018901682257;
         let image1 = image::open("tests/images/image1.png").unwrap();
         let image2 = image::open("tests/images/image2.png").unwrap();
-        let result = calculate_diff_ratio(image1, image2);
+        let result = calculate_diff_ratio(&image1, &image2);
         assert_eq!(result, EXPECTED_RESULT);
     }
 
@@ -330,7 +334,7 @@ mod tests {
         let image1 = image::open("tests/images/image1.png").unwrap();
         let image2 = image::open("tests/images/image2.png").unwrap();
         let blend_mode = BlendMode::Overlay;
-        let result = blend_images(image1, image2, blend_mode);
+        let result = blend_images(&image1, &image2, blend_mode);
         assert!(result.is_ok());
     }
 }

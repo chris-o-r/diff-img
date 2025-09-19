@@ -1,12 +1,12 @@
 [package]
-name    = "diff_img"
+name = "diff_img"
 version = "0.1.0"
 edition = "2021"
 
 
 [dependencies]
-clap  = "4.5.40"
-image = "0.25.6"
+clap = "4.5.47"
+image = "0.25.8"
 base64 = "0.22.1"
 lcs-diff = "0.1.1"
 
