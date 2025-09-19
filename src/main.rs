@@ -51,7 +51,7 @@ fn main() {
         )
         .get_matches();
 
-    let mut config = config::Config::from_clap_matches(&matches);
+    let config = config::Config::from_clap_matches(&matches);
 
     let mode = config.mode;
     let file_name: Option<&str> = config.filename.map(|s| s.as_str());
@@ -59,28 +59,28 @@ fn main() {
     if mode.is_none() {
         println!(
             "Diff ratio {}",
-            calculate_diff_ratio(config.image1.clone(), config.image2.clone())
+            calculate_diff_ratio(&config.image1, &config.image2)
         )
     } else {
         let file_name_unwrapped = file_name.expect("Please provide a file name for diff modes");
 
         let _s: Result<String, _> = match mode.unwrap() {
             DiffMode::MarkWithColor => {
-                match highlight_changes_with_color(config.image1, config.image2, config.color) {
+                match highlight_changes_with_color(&config.image1, &config.image2, config.color) {
                     Ok(img) => utils::safe_save_image(img, file_name_unwrapped),
                     Err(msg) => {
                         panic!("{}", msg);
                     }
                 }
             }
-            DiffMode::LCS => match crate::lcs_diff(&mut config.image1, &mut config.image2, RATE) {
+            DiffMode::LCS => match crate::lcs_diff(&config.image1, &config.image2, RATE) {
                 Ok(img) => utils::safe_save_image(img, file_name_unwrapped),
                 Err(msg) => {
                     panic!("{}", msg);
                 }
             },
             DiffMode::Blend => {
-                let img = diff_img::blend_images(config.image1, config.image2, config.blend_mode)
+                let img = diff_img::blend_images(&config.image1, &config.image2, config.blend_mode)
                     .unwrap();
 
                 utils::safe_save_image(img, file_name_unwrapped)
