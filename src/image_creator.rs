@@ -64,14 +64,14 @@ fn put_diff_pixels(
     y: usize,
     img: &mut ImageBuffer<Rgba<u8>, Vec<u8>>,
     row_width: u32,
-    data: &String,
+    data: &str,
     rgb: (u8, u8, u8),
     rate: f32,
 ) -> Result<(), base64::DecodeError> {
     let row = STANDARD.decode(data)?;
     for x in 0..img.dimensions().0 {
         let index = x as usize * 4;
-        let pixel: Rgba<u8> = if row_width > x {
+        let pixel: Rgba<u8> = if row_width > x && index + 3 < row.len() {
             Rgba([row[index], row[index + 1], row[index + 2], row[index + 3]])
         } else {
             Rgba([0, 0, 0, 0])

@@ -1,11 +1,8 @@
 use base64::DecodeError;
 use image::{DynamicImage, GenericImageView, ImageBuffer, Pixel, Rgb, RgbImage, Rgba};
 
-mod diff;
-mod image_creator;
-
-use diff::*;
-use image_creator::*;
+use crate::diff::*;
+use crate::image_creator::*;
 
 pub fn highlight_changes_with_color(
     before: &DynamicImage,

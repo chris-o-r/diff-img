@@ -37,7 +37,10 @@ impl<'a> Config<'a> {
         let mode: Option<DiffMode> = match mode_string {
             Some(val) => match get_mode_from_string(val) {
                 Ok(mode) => Some(mode),
-                Err(err) => panic!("{}", err),
+                Err(err) => {
+                    eprintln!("Error: {}", err);
+                    exit(1);
+                }
             },
             None => None,
         };
@@ -45,7 +48,10 @@ impl<'a> Config<'a> {
         let blend_mode: BlendMode = match matches.get_one::<String>("blend") {
             Some(bias) => match string_into_blend_mode(bias) {
                 Ok(mode) => mode,
-                Err(err) => panic!("{}", err),
+                Err(err) => {
+                    eprintln!("Error: {}", err);
+                    exit(1);
+                }
             },
             None => BlendMode::Overlay,
         };
@@ -66,7 +72,13 @@ impl<'a> Config<'a> {
             }
         };
 
-        let color = rgba_from_string(color_string.as_str()).unwrap();
+        let color = match rgba_from_string(color_string.as_str()) {
+            Ok(c) => c,
+            Err(err) => {
+                eprintln!("Error parsing color: {}", err);
+                exit(1);
+            }
+        };
 
         Config {
             image1,
@@ -110,8 +122,8 @@ fn rgba_from_string(input: &str) -> Result<Rgba<u8>, String> {
     // Convert the parsed parts into an array with four elements
     let arr = [
         parts.first().copied().unwrap_or(0), // First element, or default to 0
-        parts.get(1).copied().unwrap_or(0), // Second element, or default to 0
-        parts.get(2).copied().unwrap_or(0), // Third element, or default to 0
+        parts.get(1).copied().unwrap_or(0),  // Second element, or default to 0
+        parts.get(2).copied().unwrap_or(0),  // Third element, or default to 0
         parts.get(3).copied().unwrap_or(0),
     ];
 

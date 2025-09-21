@@ -61,22 +61,24 @@ fn main() {
             "Diff ratio {}",
             calculate_diff_ratio(&config.image1, &config.image2)
         )
-    } else {
+    } else if let Some(mode_value) = mode {
         let file_name_unwrapped = file_name.expect("Please provide a file name for diff modes");
 
-        let _s: Result<String, _> = match mode.unwrap() {
+        let _s: Result<String, _> = match mode_value {
             DiffMode::MarkWithColor => {
                 match highlight_changes_with_color(&config.image1, &config.image2, config.color) {
                     Ok(img) => utils::safe_save_image(img, file_name_unwrapped),
                     Err(msg) => {
-                        panic!("{}", msg);
+                        eprintln!("Error highlighting changes: {}", msg);
+                        std::process::exit(1);
                     }
                 }
             }
             DiffMode::LCS => match crate::lcs_diff(&config.image1, &config.image2, RATE) {
                 Ok(img) => utils::safe_save_image(img, file_name_unwrapped),
                 Err(msg) => {
-                    panic!("{}", msg);
+                    eprintln!("Error in LCS diff: {:?}", msg);
+                    std::process::exit(1);
                 }
             },
             DiffMode::Blend => {

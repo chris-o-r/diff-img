@@ -13,7 +13,6 @@ impl CompareImage {
     }
 
     pub fn create_encoded_rows(&self) -> Vec<String> {
-
         let mut rows = Vec::new();
         let mut row = Vec::new();
         for pixel in &self.pixels {

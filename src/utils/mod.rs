@@ -18,14 +18,12 @@ pub fn safe_save_image(image: DynamicImage, filename: &str) -> Result<String, St
     Ok(filename.to_string())
 }
 
-
 pub fn abs_diff(x: u8, y: u8) -> u8 {
     if x > y {
         return x - y;
     }
     y - x
 }
-
 
 #[cfg(test)]
 mod tests {

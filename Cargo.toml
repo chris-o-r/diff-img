@@ -14,4 +14,4 @@ lcs-diff = "0.1.1"
 
 [lib]
 name = "diff_img"
-path = "src/diff_img.rs"
+path = "src/lib.rs"
