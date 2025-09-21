@@ -130,6 +130,9 @@ fn get_bias_from_diff(diff: u8, current: u8, target: u8) -> f32 {
     let current = current as f32;
     let target = target as f32;
 
+    if current == 0.0 {
+        return 0.0;
+    }
     if diff == 0.0 || current == 0.0 {
         return 0.0;
     }
