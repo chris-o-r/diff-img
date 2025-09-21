@@ -385,4 +385,25 @@ mod tests {
             assert!(y < 10);
         }
     }
+
+    #[test]
+    fn test_delta_e_symmetry() {
+        // Delta E should be symmetric: delta_e(a,b) == delta_e(b,a)
+        let pixel_a = Rgba([120, 80, 200, 255]);
+        let pixel_b = Rgba([180, 40, 100, 255]);
+        
+        let delta_e_a_b = delta_e_distance(&pixel_a, &pixel_b);
+        let delta_e_b_a = delta_e_distance(&pixel_b, &pixel_a);
+        
+        assert!((delta_e_a_b - delta_e_b_a).abs() < 0.0001);
+    }
+
+    #[test]
+    fn test_create_heatmap_color_boundaries() {
+        let min_color = create_heatmap_color(0.0);
+        let max_color = create_heatmap_color(1.0);
+        
+        assert_eq!(min_color, Rgb([0, 0, 255])); // Blue for no difference
+        assert_eq!(max_color, Rgb([255, 0, 0])); // Red for max difference
+    }
 }

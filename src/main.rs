@@ -1,6 +1,6 @@
 use clap::{Arg, Command};
 use config::{DiffMode, BLEND_MODES, DIFF_MODES};
-use diff_img::{calculate_diff_ratio, highlight_changes_with_color, lcs_diff};
+use diff_img::{highlight_changes_with_color, lcs_diff, numerical::calculate_diff_ratio};
 
 use crate::config::PERCEPTUAL_MODES;
 

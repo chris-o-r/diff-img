@@ -130,9 +130,6 @@ fn get_bias_from_diff(diff: u8, current: u8, target: u8) -> f32 {
     let current = current as f32;
     let target = target as f32;
 
-    if current == 0.0 {
-        return 0.0;
-    }
     if diff == 0.0 || current == 0.0 {
         return 0.0;
     }
@@ -153,19 +150,25 @@ fn blend_rgb_pixels(
 
     // make the colors more purple for the second image
 
-    let red_y_biased = (red_y as f32 * (1.0 + rgb_bias.0)).min(255.0) as u8;
-    let green_y_biased = (green_y as f32 * (1.0 + rgb_bias.1)).min(255.0) as u8;
-    let blue_y_biased = (blue_y as f32 * (1.0 + rgb_bias.2)).min(255.0) as u8;
+    let red_y_biased = (red_y as f32 * (1.0 + rgb_bias.0))
+        .clamp(0.0, 255.0)
+        .round() as u8;
+    let green_y_biased = (green_y as f32 * (1.0 + rgb_bias.1))
+        .clamp(0.0, 255.0)
+        .round() as u8;
+    let blue_y_biased = (blue_y as f32 * (1.0 + rgb_bias.2))
+        .clamp(0.0, 255.0)
+        .round() as u8;
 
-    let out_r = (red_x as f32 + red_y_biased as f32) / 2.0;
-    let out_g = (green_x as f32 + green_y_biased as f32) / 2.0;
-    let out_b = (blue_x as f32 + blue_y_biased as f32) / 2.0;
+    let out_r = (red_x as u16 + red_y_biased as u16) / 2;
+    let out_g = (green_x as u16 + green_y_biased as u16) / 2;
+    let out_b = (blue_x as u16 + blue_y_biased as u16) / 2;
 
-    // Return the blended pixel, clamping each value to [0, 255]
+    // Return the blended pixel, clamping each value to [0, 255] and truncating (not rounding)
     (
-        out_r.clamp(0.0, 255.0) as u8,
-        out_g.clamp(0.0, 255.0) as u8,
-        out_b.clamp(0.0, 255.0) as u8,
+        out_r.clamp(0, 255) as u8,
+        out_g.clamp(0, 255) as u8,
+        out_b.clamp(0, 255) as u8,
     )
 }
 
@@ -352,5 +355,156 @@ mod tests {
         // Alpha = 0.25 should be closer to pixel_y
         let result_025 = create_overlayed_pixel(pixel_x, pixel_y, 0.25);
         assert_eq!(result_025, (63, 63, 63)); // 0.25*255 + 0.75*0 = 63.75 -> 63
+    }
+
+    #[test]
+    fn test_blend_pixel_zero_difference() {
+        // Test blend_pixel when pixels are identical
+        let pixel_x = (5, 5, Rgb([128, 128, 128]));
+        let pixel_y = (5, 5, Rgb([128, 128, 128]));
+
+        let result = blend_pixel(pixel_x, pixel_y, BlendMode::BIAS);
+
+        // Should return original pixel with alpha 0 when no difference
+        assert_eq!(result, (5, 5, Rgba([128, 128, 128, 0])));
+    }
+
+    #[test]
+    fn test_blend_pixel_all_modes() {
+        // Test all blend modes with the same input
+        let pixel_x = (2, 2, Rgb([100, 150, 200]));
+        let pixel_y = (2, 2, Rgb([200, 100, 50]));
+
+        let bias_result = blend_pixel(pixel_x, pixel_y, BlendMode::BIAS);
+        let hue_result = blend_pixel(pixel_x, pixel_y, BlendMode::HUE);
+        let overlay_result = blend_pixel(pixel_x, pixel_y, BlendMode::Overlay);
+
+        // All should have the same coordinates
+        assert_eq!(bias_result.0, 2);
+        assert_eq!(hue_result.0, 2);
+        assert_eq!(overlay_result.0, 2);
+        assert_eq!(bias_result.1, 2);
+        assert_eq!(hue_result.1, 2);
+        assert_eq!(overlay_result.1, 2);
+
+        // But different colors (since pixels differ)
+        assert_ne!(bias_result.2, hue_result.2);
+        assert_ne!(hue_result.2, overlay_result.2);
+        assert_ne!(bias_result.2, overlay_result.2);
+    }
+
+    #[test]
+    fn test_get_bias_from_diff_edge_cases() {
+        // Test edge cases for bias calculation
+
+        // Zero current value should handle gracefully
+        let bias_zero_current = get_bias_from_diff(100, 0, 128);
+        assert_eq!(bias_zero_current, 0.0); // Division by zero creates infinity
+
+        // Maximum difference
+        let bias_max_diff = get_bias_from_diff(255, 255, 128);
+        assert_eq!(bias_max_diff, 128.0); // (255/255) * 128 = 128
+
+        // Zero target
+        let bias_zero_target = get_bias_from_diff(50, 100, 0);
+        assert_eq!(bias_zero_target, 0.0); // Any bias of 0 target is 0
+    }
+
+    #[test]
+    fn test_blend_rgb_pixels_extreme_bias() {
+        // Test with extreme bias values
+        let pixel_x = (128, 128, 128);
+        let pixel_y = (64, 64, 64);
+
+        // Very high positive bias
+        let high_bias = (100.0, 100.0, 100.0);
+        let result_high = blend_rgb_pixels(pixel_x, pixel_y, high_bias);
+
+        // pixel_y gets biased to (255, 255, 255), then averaged with pixel_x
+        // (128 + 255) / 2 = 191.5 -> 192
+        assert_eq!(result_high, (191, 191, 191));
+
+        // Very high negative bias - pixel_y gets clamped to 0
+        let neg_bias = (-100.0, -100.0, -100.0);
+        let result_neg = blend_rgb_pixels(pixel_x, pixel_y, neg_bias);
+
+        // pixel_y gets biased to (0, 0, 0), then averaged with pixel_x
+        // (128 + 0) / 2 = 64
+        assert_eq!(result_neg, (64, 64, 64));
+    }
+
+    #[test]
+    fn test_blend_images_complex_pattern() {
+        // Create images with a more complex pattern
+        let mut img1: RgbImage = ImageBuffer::new(4, 4);
+        let mut img2: RgbImage = ImageBuffer::new(4, 4);
+
+        // Create a checkerboard pattern in img1
+        for y in 0..4 {
+            for x in 0..4 {
+                let color = if (x + y) % 2 == 0 {
+                    Rgb([255, 0, 0]) // Red
+                } else {
+                    Rgb([0, 255, 0]) // Green
+                };
+                img1.put_pixel(x, y, color);
+            }
+        }
+
+        // Create diagonal gradient in img2
+        for y in 0..4 {
+            for x in 0..4 {
+                let intensity = ((x + y) * 255 / 6) as u8;
+                img2.put_pixel(x, y, Rgb([intensity, intensity, intensity]));
+            }
+        }
+
+        let dyn_img1 = DynamicImage::ImageRgb8(img1);
+        let dyn_img2 = DynamicImage::ImageRgb8(img2);
+
+        // Test all blend modes with complex pattern
+        for &mode in &[BlendMode::BIAS, BlendMode::HUE, BlendMode::Overlay] {
+            let result = blend_images(&dyn_img1, &dyn_img2, mode);
+            assert!(result.is_ok());
+
+            let blended = result.unwrap();
+            assert_eq!(blended.dimensions(), (4, 4));
+        }
+    }
+
+    #[test]
+    fn test_blend_images_single_pixel() {
+        // Edge case: single pixel images
+        let img1 = create_test_image(1, 1, [255, 128, 64]);
+        let img2 = create_test_image(1, 1, [64, 128, 255]);
+
+        let result = blend_images(&img1, &img2, BlendMode::Overlay);
+        assert!(result.is_ok());
+
+        let blended = result.unwrap();
+        assert_eq!(blended.dimensions(), (1, 1));
+
+        // Verify the single pixel was processed
+        let pixel = blended.get_pixel(0, 0);
+        assert_ne!(pixel, image::Rgba([0, 0, 0, 255])); // Should not be black
+    }
+
+    #[test]
+    fn test_blend_images_large_size() {
+        // Test with larger image to verify performance
+        let size = 100;
+        let img1 = create_test_image(size, size, [100, 100, 100]);
+        let img2 = create_test_image(size, size, [150, 150, 150]);
+
+        let start = std::time::Instant::now();
+        let result = blend_images(&img1, &img2, BlendMode::HUE);
+        let duration = start.elapsed();
+
+        assert!(result.is_ok());
+        let blended = result.unwrap();
+        assert_eq!(blended.dimensions(), (size, size));
+
+        // Should complete in reasonable time (less than 1 second for 10k pixels)
+        assert!(duration.as_secs() < 1);
     }
 }
