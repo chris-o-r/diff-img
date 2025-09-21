@@ -1,5 +1,7 @@
 use image::{DynamicImage, GenericImageView, ImageBuffer, Pixel, Rgb, RgbImage, Rgba};
 
+use crate::diff_image_error::DiffImgError;
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum BlendMode {
     BIAS,
@@ -11,7 +13,13 @@ pub fn blend_images(
     image1: &DynamicImage,
     image2: &DynamicImage,
     blend_mode: BlendMode,
-) -> Result<DynamicImage, String> {
+) -> Result<DynamicImage, DiffImgError> {
+    if image1.width() != image2.width() || image1.height() != image2.height() {
+        return Err(DiffImgError::ImageDimensionMismatch {
+            image1: (image1.width(), image1.height()),
+            image2: (image2.width(), image2.height()),
+        });
+    }
     let mut result: RgbImage = ImageBuffer::new(image1.width(), image2.height());
 
     image1
@@ -122,6 +130,10 @@ fn get_bias_from_diff(diff: u8, current: u8, target: u8) -> f32 {
     let current = current as f32;
     let target = target as f32;
 
+    if diff == 0.0 || current == 0.0 {
+        return 0.0;
+    }
+
     let bias = diff / current;
 
     bias * target
@@ -168,9 +180,7 @@ mod tests {
 
     // Helper function to create a simple test image
     fn create_test_image(width: u32, height: u32, color: [u8; 3]) -> DynamicImage {
-        let img: RgbImage = ImageBuffer::from_fn(width, height, |_, _| {
-            Rgb(color)
-        });
+        let img: RgbImage = ImageBuffer::from_fn(width, height, |_, _| Rgb(color));
         DynamicImage::ImageRgb8(img)
     }
 
@@ -200,6 +210,25 @@ mod tests {
         result = create_overlayed_pixel(pixel_x, pixel_y, alpha);
 
         assert_eq!(result, (75, 125, 175));
+    }
+
+    #[test]
+    fn test_blend_dimension_mismatch() {
+        let img1 = create_test_image(10, 10, [255, 0, 0]);
+        let img2 = create_test_image(8, 10, [0, 255, 0]); // Different width
+
+        let result = blend_images(&img1, &img2, BlendMode::BIAS);
+        assert!(result.is_err());
+
+        if let Err(err) = result {
+            match err {
+                DiffImgError::ImageDimensionMismatch { image1, image2 } => {
+                    assert_eq!(image1, (10, 10));
+                    assert_eq!(image2, (8, 10));
+                }
+                _ => panic!("Expected ImageDimensionMismatch error"),
+            }
+        }
     }
 
     #[test]
@@ -245,7 +274,7 @@ mod tests {
         let blend_mode = BlendMode::Overlay;
         let result = blend_images(&image1, &image2, blend_mode);
         assert!(result.is_ok());
-        
+
         let blended = result.unwrap();
         assert_eq!(blended.dimensions(), (10, 10));
     }
@@ -253,23 +282,23 @@ mod tests {
     #[test]
     fn test_blend_images_bias() {
         let image1 = create_test_image(5, 5, [128, 128, 128]); // Gray
-        let image2 = create_test_image(5, 5, [64, 64, 64]);   // Dark gray
+        let image2 = create_test_image(5, 5, [64, 64, 64]); // Dark gray
         let blend_mode = BlendMode::BIAS;
         let result = blend_images(&image1, &image2, blend_mode);
         assert!(result.is_ok());
-        
+
         let blended = result.unwrap();
         assert_eq!(blended.dimensions(), (5, 5));
     }
 
     #[test]
     fn test_blend_images_hue() {
-        let image1 = create_test_image(8, 8, [200, 100, 50]); 
-        let image2 = create_test_image(8, 8, [50, 200, 100]); 
+        let image1 = create_test_image(8, 8, [200, 100, 50]);
+        let image2 = create_test_image(8, 8, [50, 200, 100]);
         let blend_mode = BlendMode::HUE;
         let result = blend_images(&image1, &image2, blend_mode);
         assert!(result.is_ok());
-        
+
         let blended = result.unwrap();
         assert_eq!(blended.dimensions(), (8, 8));
     }
@@ -286,7 +315,7 @@ mod tests {
     fn test_get_bias_from_diff() {
         let bias = get_bias_from_diff(100, 200, 128);
         assert_eq!(bias, 64.0); // (100/200) * 128 = 0.5 * 128 = 64
-        
+
         let bias_zero = get_bias_from_diff(0, 255, 128);
         assert_eq!(bias_zero, 0.0); // No difference, no bias
     }
@@ -298,7 +327,7 @@ mod tests {
         let blend_mode = BlendMode::Overlay;
         let result = blend_images(&image1, &image2, blend_mode);
         assert!(result.is_ok());
-        
+
         let blended = result.unwrap();
         assert_eq!(blended.dimensions(), (6, 6));
     }
@@ -308,15 +337,15 @@ mod tests {
         // Test with extreme alpha values
         let pixel_x = (255, 255, 255);
         let pixel_y = (0, 0, 0);
-        
+
         // Alpha = 0 should return pixel_y
         let result_0 = create_overlayed_pixel(pixel_x, pixel_y, 0.0);
         assert_eq!(result_0, pixel_y);
-        
-        // Alpha = 1 should return pixel_x  
+
+        // Alpha = 1 should return pixel_x
         let result_1 = create_overlayed_pixel(pixel_x, pixel_y, 1.0);
         assert_eq!(result_1, pixel_x);
-        
+
         // Alpha = 0.25 should be closer to pixel_y
         let result_025 = create_overlayed_pixel(pixel_x, pixel_y, 0.25);
         assert_eq!(result_025, (63, 63, 63)); // 0.25*255 + 0.75*0 = 63.75 -> 63

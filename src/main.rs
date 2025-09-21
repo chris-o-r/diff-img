@@ -2,6 +2,8 @@ use clap::{Arg, Command};
 use config::{DiffMode, BLEND_MODES, DIFF_MODES};
 use diff_img::{calculate_diff_ratio, highlight_changes_with_color, lcs_diff};
 
+use crate::config::PERCEPTUAL_MODES;
+
 pub mod config;
 pub mod utils;
 
@@ -43,6 +45,15 @@ fn main() {
                 .value_parser(BLEND_MODES),
         )
         .arg(
+            Arg::new("perceptual_mode")
+                .long("perceptual_mode")
+                .short('p')
+                .value_parser(config::PERCEPTUAL_MODES)
+                .default_missing_value(PERCEPTUAL_MODES[0])
+                .help("Perceptual diff mode, only used if --mode is set to 'perceptual'")
+                .required(false),
+        )
+        .arg(
             Arg::new("filename")
                 .short('f')
                 .long("filename")
@@ -82,17 +93,53 @@ fn main() {
                 }
             },
             DiffMode::Blend => {
-                let img = diff_img::blend_images(&config.image1, &config.image2, config.blend_mode)
-                    .unwrap();
+                let img =
+                    match diff_img::blend_images(&config.image1, &config.image2, config.blend_mode)
+                    {
+                        Ok(img) => img,
+                        Err(err) => {
+                            eprintln!("Error blending images: {}", err);
+                            std::process::exit(1);
+                        }
+                    };
 
                 utils::safe_save_image(img, file_name_unwrapped)
-            },
+            }
             DiffMode::Perceptual => {
-                let img = diff_img::perceptual::create_perceptual_heatmap(&config.image1, &config.image2)
-                    .unwrap();
-                
+                let perceptual_mode = config
+                    .perceptual_mode
+                    .unwrap_or(config::PerceptualMode::Diff);
 
-                utils::safe_save_image(img, file_name_unwrapped)
+                match perceptual_mode {
+                    config::PerceptualMode::Diff => {
+                        let img = match diff_img::perceptual::create_perceptual_diff_image(
+                            &config.image1,
+                            &config.image2,
+                            0.8,
+                        ) {
+                            Ok(img) => img,
+                            Err(err) => {
+                                eprintln!("Error creating perceptual diff image: {}", err);
+                                std::process::exit(1);
+                            }
+                        };
+                        utils::safe_save_image(img, file_name_unwrapped)
+                    }
+
+                    config::PerceptualMode::Heatmap => {
+                        let img = match diff_img::perceptual::create_perceptual_heatmap(
+                            &config.image1,
+                            &config.image2,
+                        ) {
+                            Ok(img) => img,
+                            Err(err) => {
+                                eprintln!("Error creating perceptual heatmap: {}", err);
+                                std::process::exit(1);
+                            }
+                        };
+                        utils::safe_save_image(img, file_name_unwrapped)
+                    }
+                }
             }
         };
     }
