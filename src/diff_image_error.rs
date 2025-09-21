@@ -138,7 +138,7 @@ impl DiffImgError {
     }
     
     pub fn check_threshold(threshold: f32) -> Result<()> {
-        if threshold < 0.0 || threshold > 1.0 {
+        if !(0.0..=1.0).contains(&threshold) {
             Err(DiffImgError::InvalidThreshold(threshold))
         } else {
             Ok(())
