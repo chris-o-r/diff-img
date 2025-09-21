@@ -35,4 +35,14 @@ mod tests {
         assert_eq!(abs_diff(11, 11), 0);
         assert_eq!(abs_diff(0, 255), 255);
     }
+
+    #[test]
+    fn test_safe_save_image_invalid_path() {
+        let img = DynamicImage::new_rgb8(1, 1);
+        let result = safe_save_image(img, "/invalid/path/to/file.png");
+        assert!(result.is_err());
+    }
+
+  
 }
+

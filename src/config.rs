@@ -4,7 +4,7 @@ use clap::ArgMatches;
 use diff_img::BlendMode;
 use image::{DynamicImage, Rgba};
 
-pub const DIFF_MODES: [&str; 3] = ["solid-color", "lcs", "blend"];
+pub const DIFF_MODES: [&str; 4] = ["solid-color", "lcs", "blend", "perceptual"];
 pub const BLEND_MODES: [&str; 3] = ["bias", "hue", "overlay"];
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -12,6 +12,7 @@ pub enum DiffMode {
     Blend,
     MarkWithColor,
     LCS,
+    Perceptual,
 }
 
 #[derive(Debug)]
@@ -103,6 +104,7 @@ fn get_mode_from_string(input: &str) -> Result<DiffMode, String> {
         val if val == DIFF_MODES[0] => Ok(DiffMode::MarkWithColor),
         val if val == DIFF_MODES[1] => Ok(DiffMode::LCS),
         val if val == DIFF_MODES[2] => Ok(DiffMode::Blend),
+        val if val == DIFF_MODES[3] => Ok(DiffMode::Perceptual),
         _ => Err(format!("Nothing matching {input}")),
     }
 }

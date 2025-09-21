@@ -86,6 +86,13 @@ fn main() {
                     .unwrap();
 
                 utils::safe_save_image(img, file_name_unwrapped)
+            },
+            DiffMode::Perceptual => {
+                let img = diff_img::perceptual::create_perceptual_heatmap(&config.image1, &config.image2)
+                    .unwrap();
+                
+
+                utils::safe_save_image(img, file_name_unwrapped)
             }
         };
     }
