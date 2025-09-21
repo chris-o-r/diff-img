@@ -162,7 +162,7 @@ fn delta_e_distance(pixel_a: &Rgba<u8>, pixel_b: &Rgba<u8>) -> f32 {
     (dl * dl + da * da + db * db).sqrt()
 }
 
-// Add missing rgb_to_lab function
+/// Converts RGB color values to the LAB color space for perceptual comparison.
 fn rgb_to_lab(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
     // Convert RGB to LAB color space for perceptual comparison
     let r = r as f32 / 255.0;
