@@ -32,7 +32,8 @@
       "args": [
         "tests/images/image1.png",
         "tests/images/image2.png",
-        "-f=tests/images/test.png"
+        "-f=tests/images/test.png", 
+        "-m=perceptual",
       ],
       "cwd": "${workspaceFolder}"
     },

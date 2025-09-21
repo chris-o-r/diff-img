@@ -18,23 +18,13 @@ pub fn safe_save_image(image: DynamicImage, filename: &str) -> Result<String, St
     Ok(filename.to_string())
 }
 
-
-pub fn abs_diff(x: u8, y: u8) -> u8 {
-    if x > y {
-        return x - y;
-    }
-    y - x
-}
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
-    fn test_abs_diff() {
-        assert_eq!(abs_diff(5, 8), 3);
-        assert_eq!(abs_diff(8, 5), 3);
-        assert_eq!(abs_diff(11, 11), 0);
-        assert_eq!(abs_diff(0, 255), 255);
+    fn test_safe_save_image_invalid_path() {
+        let img = DynamicImage::new_rgb8(1, 1);
+        let result = safe_save_image(img, "/invalid/path/to/file.png");
+        assert!(result.is_err());
     }
 }

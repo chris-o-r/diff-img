@@ -4,14 +4,22 @@ use clap::ArgMatches;
 use diff_img::BlendMode;
 use image::{DynamicImage, Rgba};
 
-pub const DIFF_MODES: [&str; 3] = ["solid-color", "lcs", "blend"];
+pub const DIFF_MODES: [&str; 4] = ["solid-color", "lcs", "blend", "perceptual"];
 pub const BLEND_MODES: [&str; 3] = ["bias", "hue", "overlay"];
+pub const PERCEPTUAL_MODES: [&str; 2] = ["diff", "heatmap"];
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum DiffMode {
     Blend,
     MarkWithColor,
     LCS,
+    Perceptual,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum PerceptualMode {
+    Diff,
+    Heatmap,
 }
 
 #[derive(Debug)]
@@ -22,6 +30,7 @@ pub struct Config<'a> {
     pub mode: Option<DiffMode>,
     pub blend_mode: BlendMode,
     pub color: Rgba<u8>,
+    pub perceptual_mode: Option<PerceptualMode>,
 }
 
 impl<'a> Config<'a> {
@@ -33,11 +42,15 @@ impl<'a> Config<'a> {
         let filename: Option<&String> = matches.get_one::<String>("filename");
         let mode_string = matches.get_one::<String>("mode");
         let color_string = matches.get_one::<String>("color").unwrap();
+        let perceptual_mode_string = matches.get_one::<String>("perceptual_mode");
 
         let mode: Option<DiffMode> = match mode_string {
             Some(val) => match get_mode_from_string(val) {
                 Ok(mode) => Some(mode),
-                Err(err) => panic!("{}", err),
+                Err(err) => {
+                    eprintln!("Error: {}", err);
+                    exit(1);
+                }
             },
             None => None,
         };
@@ -45,9 +58,24 @@ impl<'a> Config<'a> {
         let blend_mode: BlendMode = match matches.get_one::<String>("blend") {
             Some(bias) => match string_into_blend_mode(bias) {
                 Ok(mode) => mode,
-                Err(err) => panic!("{}", err),
+                Err(err) => {
+                    eprintln!("Error: {}", err);
+                    exit(1);
+                }
             },
             None => BlendMode::Overlay,
+        };
+
+        let perceptual_mode: Option<PerceptualMode> = match perceptual_mode_string {
+            Some(val) => match val.as_str() {
+                mode if mode == PERCEPTUAL_MODES[0] => Some(PerceptualMode::Diff),
+                mode if mode == PERCEPTUAL_MODES[1] => Some(PerceptualMode::Heatmap),
+                _ => {
+                    eprintln!("Error: Nothing matching {}", val);
+                    exit(1);
+                }
+            },
+            None => None,
         };
 
         let image1 = match safe_load_image(image1_path) {
@@ -66,7 +94,13 @@ impl<'a> Config<'a> {
             }
         };
 
-        let color = rgba_from_string(color_string.as_str()).unwrap();
+        let color = match rgba_from_string(color_string.as_str()) {
+            Ok(c) => c,
+            Err(err) => {
+                eprintln!("Error parsing color: {}", err);
+                exit(1);
+            }
+        };
 
         Config {
             image1,
@@ -75,6 +109,7 @@ impl<'a> Config<'a> {
             blend_mode,
             mode,
             color,
+            perceptual_mode,
         }
     }
 }
@@ -91,6 +126,7 @@ fn get_mode_from_string(input: &str) -> Result<DiffMode, String> {
         val if val == DIFF_MODES[0] => Ok(DiffMode::MarkWithColor),
         val if val == DIFF_MODES[1] => Ok(DiffMode::LCS),
         val if val == DIFF_MODES[2] => Ok(DiffMode::Blend),
+        val if val == DIFF_MODES[3] => Ok(DiffMode::Perceptual),
         _ => Err(format!("Nothing matching {input}")),
     }
 }
@@ -110,8 +146,8 @@ fn rgba_from_string(input: &str) -> Result<Rgba<u8>, String> {
     // Convert the parsed parts into an array with four elements
     let arr = [
         parts.first().copied().unwrap_or(0), // First element, or default to 0
-        parts.get(1).copied().unwrap_or(0), // Second element, or default to 0
-        parts.get(2).copied().unwrap_or(0), // Third element, or default to 0
+        parts.get(1).copied().unwrap_or(0),  // Second element, or default to 0
+        parts.get(2).copied().unwrap_or(0),  // Third element, or default to 0
         parts.get(3).copied().unwrap_or(0),
     ];
 
