@@ -71,7 +71,7 @@ fn put_diff_pixels(
     let row = STANDARD.decode(data)?;
     for x in 0..img.dimensions().0 {
         let index = x as usize * 4;
-        let pixel: Rgba<u8> = if row_width > x && index + 3 < row.len() {
+        let pixel: Rgba<u8> = if row_width > x && index + 4 <= row.len() {
             Rgba([row[index], row[index + 1], row[index + 2], row[index + 3]])
         } else {
             Rgba([0, 0, 0, 0])
