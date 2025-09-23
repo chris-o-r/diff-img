@@ -130,51 +130,6 @@ impl From<&str> for DiffImgError {
     }
 }
 
-impl PartialEq for DiffImgError {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (DiffImgError::ImageLoad(a), DiffImgError::ImageLoad(b)) => a == b,
-            (DiffImgError::ImageSave(a), DiffImgError::ImageSave(b)) => a == b,
-            (
-                DiffImgError::ImageDimensionMismatch {
-                    image1: a1,
-                    image2: a2,
-                },
-                DiffImgError::ImageDimensionMismatch {
-                    image1: b1,
-                    image2: b2,
-                },
-            ) => a1 == b1 && a2 == b2,
-            (DiffImgError::ImageFormat(a), DiffImgError::ImageFormat(b)) => a == b,
-            (DiffImgError::FileNotFound(a), DiffImgError::FileNotFound(b)) => a == b,
-            (DiffImgError::FileRead(a), DiffImgError::FileRead(b)) => a == b,
-            (DiffImgError::FileWrite(a), DiffImgError::FileWrite(b)) => a == b,
-            (DiffImgError::Base64Decode(_), DiffImgError::Base64Decode(_)) => true, // Can't compare inner error
-            (DiffImgError::InvalidAlgorithm(a), DiffImgError::InvalidAlgorithm(b)) => a == b,
-            (DiffImgError::AlgorithmFailed(a), DiffImgError::AlgorithmFailed(b)) => a == b,
-            (DiffImgError::InvalidBlendMode(a), DiffImgError::InvalidBlendMode(b)) => a == b,
-            (DiffImgError::InvalidDiffMode(a), DiffImgError::InvalidDiffMode(b)) => a == b,
-            (DiffImgError::InvalidColor(a), DiffImgError::InvalidColor(b)) => a == b,
-            (DiffImgError::InvalidThreshold(a), DiffImgError::InvalidThreshold(b)) => a == b,
-            (DiffImgError::Generic(a), DiffImgError::Generic(b)) => a == b,
-            (DiffImgError::OutOfMemory, DiffImgError::OutOfMemory) => true,
-            (
-                DiffImgError::ImageTooLarge {
-                    width: aw,
-                    height: ah,
-                    max_size: am,
-                },
-                DiffImgError::ImageTooLarge {
-                    width: bw,
-                    height: bh,
-                    max_size: bm,
-                },
-            ) => aw == bw && ah == bh && am == bm,
-            _ => false,
-        }
-    }
-}
-
 // Helper functions for common validations
 impl DiffImgError {
     pub fn check_dimensions(img1: (u32, u32), img2: (u32, u32)) -> Result<()> {

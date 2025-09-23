@@ -118,7 +118,7 @@ impl<'a> Config<'a> {
 fn safe_load_image(filename: &str) -> Result<DynamicImage, DiffImgError> {
     match image::open(filename) {
         Ok(img) => Ok(img),
-        Err(msg) => Err(DiffImgError::FileRead(msg.to_string())),
+        Err(msg) => Err(DiffImgError::ImageLoad(msg.to_string())),
     }
 }
 
@@ -183,21 +183,30 @@ mod tests {
     fn test_get_diff_mode_from_string_valid_inputs() {
         // Test with valid inputs
         assert_eq!(
-            get_mode_from_string(DIFF_MODES[0]),
-            Ok(DiffMode::MarkWithColor)
+            get_mode_from_string(DIFF_MODES[0]).unwrap(),
+            DiffMode::MarkWithColor
         );
-        assert_eq!(get_mode_from_string(DIFF_MODES[1]), Ok(DiffMode::LCS));
-        assert_eq!(get_mode_from_string(DIFF_MODES[2]), Ok(DiffMode::Blend));
+        assert_eq!(get_mode_from_string(DIFF_MODES[1]).unwrap(), DiffMode::LCS);
+        assert_eq!(
+            get_mode_from_string(DIFF_MODES[2]).unwrap(),
+            DiffMode::Blend
+        );
     }
 
     #[test]
     fn test_get_blend_mode_from_string_valid_inputs() {
         // Test with valid inputs
-        assert_eq!(string_into_blend_mode(BLEND_MODES[0]), Ok(BlendMode::BIAS));
-        assert_eq!(string_into_blend_mode(BLEND_MODES[1]), Ok(BlendMode::HUE));
         assert_eq!(
-            string_into_blend_mode(BLEND_MODES[2]),
-            Ok(BlendMode::Overlay)
+            string_into_blend_mode(BLEND_MODES[0]).unwrap(),
+            BlendMode::BIAS
+        );
+        assert_eq!(
+            string_into_blend_mode(BLEND_MODES[1]).unwrap(),
+            BlendMode::HUE
+        );
+        assert_eq!(
+            string_into_blend_mode(BLEND_MODES[2]).unwrap(),
+            BlendMode::Overlay
         );
     }
 
@@ -206,6 +215,6 @@ mod tests {
         // Test with an invalid input
         let input = "unknown";
         let expected_error = DiffImgError::InvalidDiffMode(input.to_string());
-        assert_eq!(get_mode_from_string(input), Err(expected_error));
+        assert_eq!(get_mode_from_string(input).unwrap_err().to_string(), expected_error.to_string());
     }
 }
