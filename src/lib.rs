@@ -1,9 +1,9 @@
-pub mod blend;
-pub mod diff_image_error;
-pub mod highlight;
-pub mod lcs;
-pub mod numerical;
-pub mod perceptual; // Add this line
+mod blend;
+mod diff_image_error;
+mod highlight;
+mod lcs;
+mod numerical;
+mod perceptual; // Add this line
 
 // Re-export blend functions
 pub use blend::{blend_images, BlendMode};
@@ -19,3 +19,8 @@ pub use perceptual::{
     create_perceptual_diff_image, create_perceptual_diff_only, create_perceptual_heatmap,
     perceptual_diff,
 };
+
+// Re-export numerical functions
+pub use numerical::calculate_diff_ratio;
+
+pub use diff_image_error::{DiffImgError, Result};
