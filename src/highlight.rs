@@ -186,7 +186,7 @@ pub fn highlight_changes_with_color(
         #[test]
         fn test_highlight_changes_edge_pixels() {
             // Test highlighting changes at image edges
-            let mut img1: RgbaImage = ImageBuffer::from_pixel(4, 4, Rgba([0, 0, 0, 255]));
+            let img1: RgbaImage = ImageBuffer::from_pixel(4, 4, Rgba([0, 0, 0, 255]));
             let mut img2: RgbaImage = ImageBuffer::from_pixel(4, 4, Rgba([0, 0, 0, 255]));
             
             // Change edge pixels

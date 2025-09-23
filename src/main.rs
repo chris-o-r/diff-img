@@ -1,6 +1,6 @@
 use clap::{Arg, Command};
 use config::{DiffMode, BLEND_MODES, DIFF_MODES};
-use diff_img::{highlight_changes_with_color, lcs_diff, numerical::calculate_diff_ratio};
+use diff_img::{calculate_diff_ratio, highlight_changes_with_color, lcs_diff};
 
 use crate::config::PERCEPTUAL_MODES;
 
@@ -112,7 +112,7 @@ fn main() {
 
                 match perceptual_mode {
                     config::PerceptualMode::Diff => {
-                        let img = match diff_img::perceptual::create_perceptual_diff_image(
+                        let img = match diff_img::create_perceptual_diff_image(
                             &config.image1,
                             &config.image2,
                             0.8,
@@ -127,7 +127,7 @@ fn main() {
                     }
 
                     config::PerceptualMode::Heatmap => {
-                        let img = match diff_img::perceptual::create_perceptual_heatmap(
+                        let img = match diff_img::create_perceptual_heatmap(
                             &config.image1,
                             &config.image2,
                         ) {

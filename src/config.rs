@@ -2,6 +2,7 @@ use std::process::exit;
 
 use clap::ArgMatches;
 use diff_img::BlendMode;
+use diff_img::DiffImgError;
 use image::{DynamicImage, Rgba};
 
 pub const DIFF_MODES: [&str; 4] = ["solid-color", "lcs", "blend", "perceptual"];
@@ -114,24 +115,24 @@ impl<'a> Config<'a> {
     }
 }
 
-fn safe_load_image(filename: &str) -> Result<DynamicImage, String> {
+fn safe_load_image(filename: &str) -> Result<DynamicImage, DiffImgError> {
     match image::open(filename) {
         Ok(img) => Ok(img),
-        Err(msg) => Err(format!("Error loading image {filename}: {msg}")),
+        Err(msg) => Err(DiffImgError::FileRead(msg.to_string())),
     }
 }
 
-fn get_mode_from_string(input: &str) -> Result<DiffMode, String> {
+fn get_mode_from_string(input: &str) -> Result<DiffMode, DiffImgError> {
     match input {
         val if val == DIFF_MODES[0] => Ok(DiffMode::MarkWithColor),
         val if val == DIFF_MODES[1] => Ok(DiffMode::LCS),
         val if val == DIFF_MODES[2] => Ok(DiffMode::Blend),
         val if val == DIFF_MODES[3] => Ok(DiffMode::Perceptual),
-        _ => Err(format!("Nothing matching {input}")),
+        _ => Err(DiffImgError::InvalidDiffMode(input.to_string())),
     }
 }
 
-fn rgba_from_string(input: &str) -> Result<Rgba<u8>, String> {
+fn rgba_from_string(input: &str) -> Result<Rgba<u8>, DiffImgError> {
     let mut cleaned = input.to_string();
     cleaned = cleaned.replace("[", "");
     cleaned = cleaned.replace("]", "");
@@ -154,12 +155,12 @@ fn rgba_from_string(input: &str) -> Result<Rgba<u8>, String> {
     Ok(Rgba::<u8>(arr))
 }
 
-fn string_into_blend_mode(input: &str) -> Result<BlendMode, String> {
+fn string_into_blend_mode(input: &str) -> Result<BlendMode, DiffImgError> {
     match input {
         val if val == BLEND_MODES[0] => Ok(BlendMode::BIAS),
         val if val == BLEND_MODES[1] => Ok(BlendMode::HUE),
         val if val == BLEND_MODES[2] => Ok(BlendMode::Overlay),
-        _ => Err(format!("Nothing matching {input}")),
+        _ => Err(DiffImgError::InvalidBlendMode(input.to_string())),
     }
 }
 
@@ -204,7 +205,7 @@ mod tests {
     fn test_get_mode_from_string_invalid_input() {
         // Test with an invalid input
         let input = "unknown";
-        let expected_error = format!("Nothing matching {input}");
+        let expected_error = DiffImgError::InvalidDiffMode(input.to_string());
         assert_eq!(get_mode_from_string(input), Err(expected_error));
     }
 }
