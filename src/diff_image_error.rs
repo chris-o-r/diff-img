@@ -27,6 +27,7 @@ pub enum DiffImgError {
     InvalidBlendMode(String),
     InvalidColor(String),
     InvalidThreshold(f32),
+    /// Returned when an invalid or unsupported diff mode is specified in the configuration or function call.
     InvalidDiffMode(String),
 
     // Generic errors
