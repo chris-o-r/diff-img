@@ -68,10 +68,15 @@ fn main() {
     let file_name: Option<&str> = config.filename.map(|s| s.as_str());
 
     if mode.is_none() {
-        println!(
-            "Diff ratio {}",
-            calculate_diff_ratio(&config.image1, &config.image2)
-        )
+        let diff_result = match calculate_diff_ratio(&config.image1, &config.image2) {
+            Ok(res) => res,
+            Err(msg) => {
+                eprintln!("Error calculating diff: {}", msg);
+                std::process::exit(1);
+            }
+        };
+
+        println!("Diff ratio {}", diff_result)
     } else if let Some(mode_value) = mode {
         let file_name_unwrapped = file_name.expect("Please provide a file name for diff modes");
 
